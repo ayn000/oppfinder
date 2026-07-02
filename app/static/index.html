@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="robots" content="noindex, nofollow">
+  <title>OppFinder - Veille emplois &amp; stages</title>
+  <link rel="stylesheet" href="/static/css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔭</text></svg>">
+</head>
+<body>
+
+  <!-- ===================== LOGIN ===================== -->
+  <div id="view-login" class="hidden">
+    <div class="login-card">
+      <div class="login-brand">🔭 <span>Opp<em>Finder</em></span></div>
+      <p class="login-sub">Veille privée d'emplois &amp; de stages</p>
+      <form id="login-form" autocomplete="on">
+        <label for="login-username">Identifiant</label>
+        <input id="login-username" name="username" type="text" autocomplete="username" required>
+        <label for="login-password">Mot de passe</label>
+        <input id="login-password" name="password" type="password" autocomplete="current-password" required>
+        <div id="login-error" class="form-error hidden"></div>
+        <button type="submit" class="btn btn-primary btn-block" id="login-submit">Se connecter</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ===================== APP ===================== -->
+  <div id="view-app" class="hidden">
+    <aside class="sidebar">
+      <div class="brand">🔭 <span>Opp<em>Finder</em></span></div>
+      <button class="btn btn-primary btn-block" id="btn-new-alert">+ Nouvelle alerte</button>
+      <nav id="alert-list" class="alert-list"></nav>
+      <div class="sidebar-footer">
+        <span id="me-name"></span>
+        <button class="btn btn-ghost btn-sm" id="btn-logout" title="Se déconnecter">Déconnexion</button>
+      </div>
+    </aside>
+
+    <main class="content">
+      <div id="empty-state" class="empty-state hidden">
+        <div class="empty-icon">🔭</div>
+        <h2>Bienvenue sur OppFinder</h2>
+        <p>Crée ta première alerte avec tes mots-clés : les annonces correspondantes seront récupérées automatiquement toutes les 24&nbsp;heures.</p>
+        <button class="btn btn-primary" id="btn-empty-new">Créer une alerte</button>
+      </div>
+
+      <div id="alert-view" class="hidden">
+        <header class="alert-header">
+          <div class="alert-header-main">
+            <h1 id="alert-title"></h1>
+            <div id="alert-chips" class="chips"></div>
+            <div id="alert-meta" class="alert-meta"></div>
+          </div>
+          <div class="alert-header-actions">
+            <button class="btn btn-ghost" id="btn-refresh" title="Rafraîchir maintenant">⟳ Rafraîchir</button>
+            <button class="btn btn-ghost" id="btn-edit-alert" title="Modifier">✎</button>
+            <button class="btn btn-ghost btn-danger" id="btn-delete-alert" title="Supprimer">🗑</button>
+          </div>
+        </header>
+
+        <div class="toolbar">
+          <input type="search" id="filter-search" placeholder="Filtrer les annonces...">
+          <label class="toggle"><input type="checkbox" id="filter-fav"> ★ Favoris</label>
+          <label class="toggle"><input type="checkbox" id="filter-hidden"> Voir les masquées</label>
+          <span id="job-count" class="job-count"></span>
+        </div>
+
+        <div id="job-list" class="job-list"></div>
+      </div>
+    </main>
+
+    <!-- Chat IA -->
+    <aside id="chat-panel" class="chat-panel hidden">
+      <header class="chat-header">
+        <div>
+          <div class="chat-title">Conseiller IA</div>
+          <div id="chat-job-title" class="chat-subtitle"></div>
+        </div>
+        <button class="btn btn-ghost" id="btn-close-chat">✕</button>
+      </header>
+      <div id="chat-messages" class="chat-messages"></div>
+      <form id="chat-form" class="chat-input">
+        <textarea id="chat-text" rows="2" placeholder="Pose une question sur cette offre (CV, entretien, candidature)"></textarea>
+        <button type="submit" class="btn btn-primary" id="chat-send">➤</button>
+      </form>
+    </aside>
+  </div>
+
+  <!-- ===================== MODALE ALERTE ===================== -->
+  <div id="modal-backdrop" class="modal-backdrop hidden">
+    <div class="modal">
+      <h2 id="modal-title">Nouvelle alerte</h2>
+      <form id="alert-form">
+        <label for="f-name">Nom de l'alerte</label>
+        <input id="f-name" type="text" maxlength="80" required placeholder="Ex. : Stage affaires publiques">
+
+        <label for="f-keywords">Mots-clés <small>(séparés par des virgules, ils servent au calcul du score)</small></label>
+        <input id="f-keywords" type="text" required placeholder="Ex. : affaires publiques, lobbying, union européenne">
+
+        <div class="form-row">
+          <div>
+            <label for="f-zone">Zone de recherche</label>
+            <select id="f-zone"></select>
+          </div>
+          <div>
+            <label for="f-contract">Type de contrat</label>
+            <select id="f-contract">
+              <option value="">Tous</option>
+              <option value="cdi">CDI</option>
+              <option value="cdd">CDD</option>
+              <option value="stage">Stage</option>
+              <option value="alternance">Alternance</option>
+            </select>
+          </div>
+        </div>
+        <p class="field-hint" id="zone-hint">Hors France, la recherche s'appuie surtout sur Adzuna (clé gratuite, voir tuto.md) et Remotive.</p>
+
+        <label for="f-location">Ville / région <small>(optionnel, utilisé uniquement pour la zone France)</small></label>
+        <input id="f-location" type="text" maxlength="80" placeholder="Ex. : Paris">
+
+        <label>Sources</label>
+        <div id="f-sources" class="sources"></div>
+
+        <div id="form-error" class="form-error hidden"></div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-ghost" id="btn-cancel-modal">Annuler</button>
+          <button type="submit" class="btn btn-primary" id="btn-save-alert">Enregistrer</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/static/js/app.js"></script>
+</body>
+</html>
