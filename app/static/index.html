@@ -64,6 +64,11 @@
           <input type="search" id="filter-search" placeholder="Filtrer les annonces...">
           <label class="toggle"><input type="checkbox" id="filter-fav"> ★ Favoris</label>
           <label class="toggle"><input type="checkbox" id="filter-hidden"> Voir les masquées</label>
+          <select id="filter-sort" title="Trier les annonces">
+            <option value="relevance">Trier : Pertinence</option>
+            <option value="date-desc">Trier : Plus récentes</option>
+            <option value="date-asc">Trier : Plus anciennes</option>
+          </select>
           <span id="job-count" class="job-count"></span>
         </div>
 
@@ -82,8 +87,16 @@
       </header>
       <div id="chat-messages" class="chat-messages"></div>
       <form id="chat-form" class="chat-input">
-        <textarea id="chat-text" rows="2" placeholder="Pose une question sur cette offre (CV, entretien, candidature)"></textarea>
-        <button type="submit" class="btn btn-primary" id="chat-send">➤</button>
+        <div id="chat-attachment" class="chat-attachment hidden">
+          <span id="chat-attachment-name"></span>
+          <button type="button" id="chat-attachment-remove" title="Retirer le fichier">✕</button>
+        </div>
+        <div class="chat-input-row">
+          <input type="file" id="chat-file" accept=".pdf,.txt,application/pdf,text/plain" hidden>
+          <button type="button" class="btn btn-ghost" id="chat-attach-btn" title="Joindre un fichier (CV en PDF ou .txt, 8 Mo max)">📎</button>
+          <textarea id="chat-text" rows="2" placeholder="Pose une question sur cette offre (CV, entretien, candidature)"></textarea>
+          <button type="submit" class="btn btn-primary" id="chat-send">➤</button>
+        </div>
       </form>
     </aside>
   </div>

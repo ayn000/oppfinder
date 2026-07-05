@@ -168,6 +168,7 @@ label small { color: var(--muted); font-weight: 400; }
   margin: 20px 0 14px;
 }
 .toolbar input[type="search"] { max-width: 300px; }
+.toolbar select { width: auto; }
 .toggle { display: flex; align-items: center; gap: 6px; margin: 0; font-weight: 400; color: var(--muted); cursor: pointer; white-space: nowrap; }
 .job-count { margin-left: auto; color: var(--muted); font-size: .88rem; }
 
@@ -254,9 +255,17 @@ label small { color: var(--muted); font-weight: 400; }
 .msg.assistant { align-self: flex-start; background: var(--surface); border: 1px solid var(--border); }
 .msg.assistant strong { color: var(--accent); }
 .chat-hint { color: var(--muted); font-size: .85rem; text-align: center; margin-top: 20px; padding: 0 10px; }
-.chat-input { display: flex; gap: 8px; padding: 12px; border-top: 1px solid var(--border); }
+.chat-input { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-top: 1px solid var(--border); }
+.chat-input-row { display: flex; gap: 8px; }
 .chat-input textarea { resize: none; }
 .chat-input button { flex-shrink: 0; align-self: flex-end; }
+.chat-attachment {
+  display: flex; align-items: center; gap: 8px;
+  background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+  padding: 5px 10px; font-size: .82rem; color: var(--muted);
+}
+.chat-attachment span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.chat-attachment button { background: none; border: none; cursor: pointer; color: var(--muted); font-size: .9rem; padding: 0; margin-left: auto; }
 
 /* ---------- modale ---------- */
 .modal-backdrop {

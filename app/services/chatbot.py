@@ -34,12 +34,28 @@ Ton rôle :
 - Donner des conseils concrets et personnalisés pour adapter le CV et la lettre de motivation à cette offre (mots-clés à reprendre, expériences à mettre en avant).
 - Préparer aux questions d'entretien probables pour ce poste.
 - Aider à rédiger des extraits de candidature si demandé.
+- Si l'utilisateur joint un fichier (CV), t'appuyer dessus pour des conseils concrets et personnalisés (reformulations, points à mettre en avant ou à retirer pour cette offre précise).
 
 Règles : réponds en français, de façon concise et structurée (Markdown léger : titres courts, listes). N'utilise ni tirets longs ni caractères typographiques spéciaux, écris comme un humain. Si une information ne figure pas dans l'offre, dis-le franchement au lieu d'inventer. Adapte ton niveau de détail à la question posée."""
 
 
 def chat_enabled() -> bool:
     return bool(settings.anthropic_api_key)
+
+
+def _message_content(m: ChatMessage) -> str | list[dict]:
+    if not m.attachment:
+        return m.content
+    document = {
+        "type": "document",
+        "source": {
+            "type": "base64",
+            "media_type": m.attachment.media_type,
+            "data": m.attachment.data,
+        },
+        "title": m.attachment.filename[:200],
+    }
+    return [document, {"type": "text", "text": m.content}]
 
 
 def _build_system(job: Job, alert: Alert) -> str:
@@ -67,7 +83,7 @@ async def stream_reply(job: Job, alert: Alert, messages: list[ChatMessage]) -> A
             "cache_control": {"type": "ephemeral"},
         }
     ]
-    api_messages = [{"role": m.role, "content": m.content} for m in messages]
+    api_messages = [{"role": m.role, "content": _message_content(m)} for m in messages]
     try:
         async with client.messages.stream(
             model=settings.anthropic_model,

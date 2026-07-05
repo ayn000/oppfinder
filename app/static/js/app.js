@@ -173,12 +173,23 @@ function renderJobs() {
   const list = $("#job-list");
   const search = $("#filter-search").value.trim().toLowerCase();
   const favOnly = $("#filter-fav").checked;
+  const sortOrder = $("#filter-sort").value;
 
   let jobs = state.jobs;
   if (favOnly) jobs = jobs.filter((j) => j.is_favorite);
   if (search) {
     jobs = jobs.filter((j) =>
       (j.title + " " + j.company + " " + j.location).toLowerCase().includes(search));
+  }
+  if (sortOrder !== "relevance") {
+    jobs = [...jobs].sort((a, b) => {
+      const da = a.published_at ? new Date(a.published_at) : null;
+      const db = b.published_at ? new Date(b.published_at) : null;
+      if (!da && !db) return 0;
+      if (!da) return 1;
+      if (!db) return -1;
+      return sortOrder === "date-desc" ? db - da : da - db;
+    });
   }
 
   $("#job-count").textContent = `${jobs.length} annonce${jobs.length > 1 ? "s" : ""}`;
@@ -232,17 +243,68 @@ async function onJobAction(action, job) {
 
 /* ---------------- chat IA ---------------- */
 function openChat(job) {
-  state.chat = { job, messages: [], streaming: false };
+  state.chat = { job, messages: [], streaming: false, pendingAttachment: null };
   $("#chat-job-title").textContent = job.title + (job.company ? " - " + job.company : "");
   $("#chat-messages").innerHTML = `<div class="chat-hint">Demande-moi une analyse de l'offre, des conseils
-    pour adapter ton CV, une aide pour la lettre de motivation ou les questions d'entretien probables.</div>`;
+    pour adapter ton CV, une aide pour la lettre de motivation ou les questions d'entretien probables.
+    Tu peux aussi joindre ton CV (📎, PDF ou .txt) pour que je m'en serve.</div>`;
+  clearChatAttachment();
   $("#chat-panel").classList.remove("hidden");
   $("#chat-text").focus();
 }
 
 function closeChat() {
   $("#chat-panel").classList.add("hidden");
-  state.chat = { job: null, messages: [], streaming: false };
+  state.chat = { job: null, messages: [], streaming: false, pendingAttachment: null };
+  clearChatAttachment();
+}
+
+const CHAT_ATTACHMENT_MAX_BYTES = 8 * 1024 * 1024;
+
+function fileToBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(",")[1]);
+    reader.onerror = () => reject(new Error("Lecture du fichier impossible"));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function onChatFileSelected(e) {
+  const file = e.target.files[0];
+  e.target.value = "";
+  if (!file) return;
+
+  const mediaType = file.type === "application/pdf" ? "application/pdf"
+    : (file.type === "text/plain" || /\.txt$/i.test(file.name)) ? "text/plain"
+    : null;
+  if (!mediaType) {
+    window.alert("Seuls les fichiers PDF ou texte (.txt) sont acceptés.");
+    return;
+  }
+  if (file.size > CHAT_ATTACHMENT_MAX_BYTES) {
+    window.alert("Fichier trop volumineux (8 Mo max).");
+    return;
+  }
+
+  try {
+    const data = await fileToBase64(file);
+    state.chat.pendingAttachment = { filename: file.name, media_type: mediaType, data };
+    showChatAttachmentChip(file.name);
+  } catch (err) {
+    window.alert(err.message);
+  }
+}
+
+function showChatAttachmentChip(filename) {
+  $("#chat-attachment-name").textContent = "📎 " + filename;
+  $("#chat-attachment").classList.remove("hidden");
+}
+
+function clearChatAttachment() {
+  if (state.chat) state.chat.pendingAttachment = null;
+  $("#chat-attachment").classList.add("hidden");
+  $("#chat-attachment-name").textContent = "";
 }
 
 function appendMsg(role, content) {
@@ -263,8 +325,12 @@ async function sendChat() {
   if (hint) hint.remove();
 
   textarea.value = "";
-  state.chat.messages.push({ role: "user", content });
-  appendMsg("user", content);
+  const attachment = state.chat.pendingAttachment;
+  if (attachment) clearChatAttachment();
+
+  const userMsg = attachment ? { role: "user", content, attachment } : { role: "user", content };
+  state.chat.messages.push(userMsg);
+  appendMsg("user", content + (attachment ? `\n\n📎 ${attachment.filename}` : ""));
 
   state.chat.streaming = true;
   $("#chat-send").disabled = true;
@@ -296,6 +362,10 @@ async function sendChat() {
   } catch (err) {
     bubble.innerHTML = mdLite(`⚠️ ${err.message}`);
     state.chat.messages.pop(); // retire le message user pour pouvoir réessayer
+    if (attachment) {
+      state.chat.pendingAttachment = attachment;
+      showChatAttachmentChip(attachment.filename);
+    }
   } finally {
     state.chat.streaming = false;
     $("#chat-send").disabled = false;
@@ -470,12 +540,16 @@ async function init() {
   $("#filter-search").addEventListener("input", renderJobs);
   $("#filter-fav").addEventListener("change", renderJobs);
   $("#filter-hidden").addEventListener("change", loadJobs);
+  $("#filter-sort").addEventListener("change", renderJobs);
 
   $("#btn-close-chat").addEventListener("click", closeChat);
   $("#chat-form").addEventListener("submit", (e) => { e.preventDefault(); sendChat(); });
   $("#chat-text").addEventListener("keydown", (e) => {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); sendChat(); }
   });
+  $("#chat-attach-btn").addEventListener("click", () => $("#chat-file").click());
+  $("#chat-file").addEventListener("change", onChatFileSelected);
+  $("#chat-attachment-remove").addEventListener("click", clearChatAttachment);
 
   // session existante ?
   try {

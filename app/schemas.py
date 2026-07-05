@@ -57,9 +57,16 @@ class JobOut(BaseModel):
     is_hidden: bool
 
 
+class ChatAttachment(BaseModel):
+    filename: str = Field(min_length=1, max_length=200)
+    media_type: Literal["application/pdf", "text/plain"]
+    data: str = Field(min_length=1, max_length=15_000_000)  # base64, ~11 Mo de fichier max
+
+
 class ChatMessage(BaseModel):
     role: Literal["user", "assistant"]
     content: str = Field(min_length=1, max_length=8000)
+    attachment: ChatAttachment | None = None
 
 
 class ChatIn(BaseModel):
