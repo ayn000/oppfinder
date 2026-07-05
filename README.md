@@ -15,9 +15,9 @@ petite droplet.
 
 - Des alertes personnalisées : mots-clés, lieu, contrat (CDI, CDD, stage,
   alternance) et choix des sources à interroger.
-- Une recherche multi-pays via Adzuna (19 pays). On choisit la zone — France,
+- Une recherche multi-pays via Adzuna (19 pays). On choisit la zone comme la France,
   Europe, Amérique du Nord, Amérique latine, Asie-Pacifique, Afrique ou monde
-  entier — et le pays s'affiche sur chaque annonce.
+  entier, et le pays s'affiche sur chaque annonce.
 - Un score de correspondance de 0 à 100 entre l'annonce et les mots-clés. Un
   mot trouvé dans le titre compte plus que dans la description, et les accents
   sont ignorés.
@@ -71,8 +71,8 @@ docker compose exec oppfinder python manage.py create-user <nom>
 | `REFRESH_INTERVAL_HOURS` | `24` | Cadence de mise à jour des alertes |
 | `JOB_RETENTION_DAYS` | `7` | Durée de conservation des annonces non favorites |
 | `MIN_SCORE` | `10` | Score minimal pour conserver une annonce |
-| `FT_CLIENT_ID` / `FT_CLIENT_SECRET` | — | API France Travail (gratuit) |
-| `ADZUNA_APP_ID` / `ADZUNA_APP_KEY` | — | API Adzuna (gratuit) |
+| `FT_CLIENT_ID` / `FT_CLIENT_SECRET` | X | API France Travail (gratuit) |
+| `ADZUNA_APP_ID` / `ADZUNA_APP_KEY` | X | API Adzuna (gratuit) |
 | `ANTHROPIC_API_KEY` | — | Active l'assistant IA |
 | `ANTHROPIC_MODEL` | `claude-opus-4-8` | Modèle utilisé (`claude-haiku-4-5` pour réduire les coûts) |
 
