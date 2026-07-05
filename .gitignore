@@ -1,8 +1,10 @@
 .env
+docker-compose.yml
 data/
 __pycache__/
 *.pyc
 .venv/
 venv/
+.claude/
 .DS_Store
 tuto.md

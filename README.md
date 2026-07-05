@@ -1,30 +1,46 @@
-# 🔭 OppFinder
+# OppFinder
 
-Application privée de veille d'offres d'emploi et de stages, pensée pour être
-auto-hébergée sur une petite droplet.
+OppFinder est une appli de veille d'offres d'emploi et de stages que je fais
+tourner sur mon propre serveur. On crée des alertes (mots-clés, lieu, type de
+contrat, zone géographique), l'appli interroge plusieurs job boards toutes les
+24 h et remonte les annonces classées par pertinence. Un assistant IA
+facultatif, basé sur l'API Claude, aide ensuite à décortiquer une offre,
+adapter son CV ou préparer l'entretien.
 
-## Fonctionnalités
+L'objectif était d'avoir quelque chose de léger à auto-héberger : une seule
+image Docker, une base SQLite, aucune dépendance lourde. Ça tient sur la plus
+petite droplet.
 
-- **Alertes par mots-clés** : nom, mots-clés, lieu, type de contrat (CDI / CDD / stage / alternance), choix des sources.
-- **Zones de recherche internationales** : France, Europe, Amérique du Nord, Amérique latine,
-  Asie-Pacifique, Afrique ou Monde entier — via les endpoints multi-pays d'Adzuna (19 pays),
-  avec affichage du pays sur chaque annonce.
-- **Mise à jour automatique toutes les 24 h** + rafraîchissement manuel.
-- **Score de correspondance (0–100)** entre chaque annonce et les mots-clés de l'alerte
-  (mot-clé trouvé dans le titre > dans la description, insensible aux accents).
-- **Purge automatique** des annonces de plus de 7 jours (les favoris sont conservés) →
-  base SQLite minuscule, adaptée à un petit disque.
-- **4 sources** : France Travail et Adzuna (clés gratuites), Remotive et Arbeitnow (sans clé).
-- **Favoris / masquage** d'annonces, filtres et recherche.
-- **Conseiller IA optionnel** (API Claude) : analyse de l'offre, adaptation du CV,
-  préparation d'entretien — en streaming, activé par la simple présence d'une clé API.
-- **Comptes privés** : création uniquement via CLI, aucune inscription publique.
+## Ce que ça fait
 
-## Stack
+- Des alertes personnalisées : mots-clés, lieu, contrat (CDI, CDD, stage,
+  alternance) et choix des sources à interroger.
+- Une recherche multi-pays via Adzuna (19 pays). On choisit la zone — France,
+  Europe, Amérique du Nord, Amérique latine, Asie-Pacifique, Afrique ou monde
+  entier — et le pays s'affiche sur chaque annonce.
+- Un score de correspondance de 0 à 100 entre l'annonce et les mots-clés. Un
+  mot trouvé dans le titre compte plus que dans la description, et les accents
+  sont ignorés.
+- Un rafraîchissement automatique toutes les 24 h, plus un bouton pour le
+  déclencher à la main.
+- Un nettoyage automatique des annonces de plus de 7 jours. Les favoris, eux,
+  sont conservés, ce qui garde la base SQLite minuscule.
+- Favoris, masquage d'annonces, filtres et recherche côté interface.
+- Des comptes privés : pas d'inscription publique, les utilisateurs se créent
+  en ligne de commande.
 
-FastAPI · SQLAlchemy · SQLite · vanilla JS (aucun build front) · Docker.
+Quatre sources sont branchées : France Travail et Adzuna (clés gratuites à
+créer) ainsi que Remotive et Arbeitnow (sans clé).
 
-## Démarrage en développement
+## Stack technique
+
+Le backend est en FastAPI avec SQLAlchemy sur SQLite. Le front est en
+JavaScript vanilla, sans étape de build. Un scheduler interne s'occupe des
+rafraîchissements planifiés. L'assistant IA appelle l'API Claude en streaming
+et se désactive tout seul quand aucune clé n'est renseignée. Le tout est
+packagé dans une image Docker unique.
+
+## Lancer en local
 
 ```bash
 python3 -m venv .venv && source .venv/bin/activate
@@ -32,12 +48,20 @@ pip install -r requirements.txt
 cp .env.example .env
 python manage.py create-user demo
 uvicorn app.main:app --reload
-# → http://127.0.0.1:8000
+# http://127.0.0.1:8000
 ```
 
-## Déploiement en production
+## En production
 
-Voir **[tuto.md](tuto.md)** — guide pas à pas (DNS, Docker, nginx, HTTPS, comptes).
+L'appli tourne derrière un reverse proxy nginx avec HTTPS (certificat Let's
+Encrypt). Le conteneur n'expose son port qu'en local ; nginx fait le lien avec
+l'extérieur.
+
+```bash
+cp .env.example .env          # renseigner les clés et passer COOKIE_SECURE=true
+docker compose up -d --build
+docker compose exec oppfinder python manage.py create-user <nom>
+```
 
 ## Configuration (`.env`)
 
@@ -49,8 +73,8 @@ Voir **[tuto.md](tuto.md)** — guide pas à pas (DNS, Docker, nginx, HTTPS, com
 | `MIN_SCORE` | `10` | Score minimal pour conserver une annonce |
 | `FT_CLIENT_ID` / `FT_CLIENT_SECRET` | — | API France Travail (gratuit) |
 | `ADZUNA_APP_ID` / `ADZUNA_APP_KEY` | — | API Adzuna (gratuit) |
-| `ANTHROPIC_API_KEY` | — | Active le conseiller IA |
-| `ANTHROPIC_MODEL` | `claude-opus-4-8` | Modèle du conseiller (`claude-haiku-4-5` pour réduire les coûts) |
+| `ANTHROPIC_API_KEY` | — | Active l'assistant IA |
+| `ANTHROPIC_MODEL` | `claude-opus-4-8` | Modèle utilisé (`claude-haiku-4-5` pour réduire les coûts) |
 
 ## Gestion des comptes
 
@@ -61,4 +85,4 @@ python manage.py delete-user <nom>
 python manage.py list-users
 ```
 
-(En production : préfixer par `docker compose exec oppfinder`.)
+En production, préfixer ces commandes par `docker compose exec oppfinder`.
